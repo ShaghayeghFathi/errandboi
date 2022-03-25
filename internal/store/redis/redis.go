@@ -1,4 +1,4 @@
-package redis
+package redisPK
 
 import (
 	"github.com/go-redis/redis/v8"
@@ -8,6 +8,10 @@ import (
 )
 type RedisDB struct {
 	db *rdb.Redis
+}
+
+func NewRedis(db *rdb.Redis) *RedisDB{
+	return &RedisDB{db:db}
 }
 
 func (r *RedisDB) ZSet(ctx context.Context, setName string, publishTime float64, id string) (int64 ,error) {

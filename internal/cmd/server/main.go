@@ -3,8 +3,10 @@ package server
 import (
 	"context"
 	"errandboi/internal/config"
+	"errandboi/internal/db/mongodb"
 	"errandboi/internal/db/rdb"
 	"errandboi/internal/http/handler"
+	"errandboi/internal/store/mongo"
 	redisPK "errandboi/internal/store/redis"
 	"errors"
 	"fmt"
@@ -26,16 +28,17 @@ func main(cfg config.Config){
 
 	}
 	redisdb := rdb.Redis{Client: redisClient}
-	// mongodb, err := mongodb.New(cfg.Mongo)
-	// if err != nil {
-	// 	fmt.Errorf("mongo initiation failed")
-	// }
+	mongodb, err := mongodb.New(cfg.Mongo)
+	if err != nil {
+		log.Fatal("mongo initiation failed")
+	}
 	app := fiber.New(fiber.Config{
 		AppName: "errandboi",
 	})
 
 	handler.Handler{
 		Redis : redisPK.NewRedis(&redisdb),
+		Mongo: mongo.NewMongoDB(mongodb),
 	}.Register(app)
 
 	if err := app.Listen(":3000"); !errors.Is(err, http.ErrServerClosed) {

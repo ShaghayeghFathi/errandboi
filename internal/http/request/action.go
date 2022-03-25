@@ -6,7 +6,7 @@ type Action struct{
 }
 
 type Event struct{
-	Descriptiion string `json:"description"`
+	Description string `json:"description"`
 	Delay string `json:"delay"`
 	Topic string `json:"topic"`
 	Payload interface{} `json:"payload"`

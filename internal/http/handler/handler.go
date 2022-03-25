@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"errandboi/internal/store/mongo"
 	redisPK "errandboi/internal/store/redis"
 	"fmt"
 	"net/http"
@@ -10,11 +11,12 @@ import (
 	"errandboi/internal/http/request"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/google/uuid"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type Handler struct{
 	Redis *redisPK.RedisDB
+	Mongo *mongo.MongoDB
 }
 
 func(h Handler) registerEvents(ctx *fiber.Ctx)error{
@@ -23,16 +25,20 @@ func(h Handler) registerEvents(ctx *fiber.Ctx)error{
 	if err := ctx.BodyParser(action); err != nil {
 		return fiber.NewError(http.StatusBadRequest, err.Error())
 	}
-	actionId := uuid.NewString()
+	actionId := primitive.NewObjectID()
 
 	for i := 0; i < len(action.Events); i++ {
 		releaseTime := calculateReleaseTime(action.Events[i].Delay)
-		id := actionId + "_" + strconv.Itoa(i)
+		id := actionId.String() + "_" + strconv.Itoa(i)
 		h.Redis.ZSet(ctx.Context() , "events" , releaseTime, id ) // TODO: add set name to config
+
+		h.Mongo.StoreEvent(ctx.Context(), id, action.Events[i].Description, action.Events[i].Delay , action.Events[i].Topic, 
+		action.Events[i].Payload)
 	}
-	
+	h.Mongo.StoreAction(ctx.Context(), actionId, action.Type,len(action.Events))
+
 	return ctx.Status(http.StatusOK).JSON(&fiber.Map{
-		"id" : actionId,
+		"id" : actionId.String(),
 	  })
 }
 
