@@ -16,8 +16,9 @@ require (
 	github.com/fatih/structs v1.1.0 // indirect
 	github.com/go-redis/redis/v8 v8.11.4 // indirect
 	github.com/go-stack/stack v1.8.0 // indirect
-	github.com/gofiber/fiber/v2 v2.29.0 // indirect
+	github.com/gofiber/fiber/v2 v2.30.0 // indirect
 	github.com/golang/snappy v0.0.1 // indirect
+	github.com/google/uuid v1.3.0 // indirect
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
 	github.com/klauspost/compress v1.15.0 // indirect
 	github.com/knadh/koanf v1.4.0 // indirect
