@@ -9,13 +9,13 @@ import (
 func Default() Config{
 	return Config{
 	Redis: rdb.Config{
-		Address:  "ADDRESS:6379",
+		Address:  "localhost:6379",
 		Password: "",
 		DB:       0,
 	},
 	Mongo: mongodb.Config{
 		Name: "errandboi",
-		URL: "mongodb://ADDRESS:27017",
+		URL: "mongodb://localhost:27017",
 		Timeout: 10*time.Second,
 	},
    }	

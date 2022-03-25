@@ -10,7 +10,7 @@ import (
 )
 
 type Redis struct{
-	Client redis.Client
+	Client *redis.Client
 }
 
 func New(ctx context.Context,cfg Config)(*redis.Client,error){
