@@ -42,6 +42,17 @@ func(h Handler) registerEvents(ctx *fiber.Ctx)error{
 	  })
 }
 
+func(h *Handler) getEvents(ctx *fiber.Ctx)error{
+	eventId := ctx.Params("eventId")
+	objectId,_ := primitive.ObjectIDFromHex(eventId)
+	action,_ := h.Mongo.GetAction(ctx.Context(), objectId)
+	fmt.Println("found action: ", action)
+	
+	return ctx.Status(http.StatusOK).JSON(&fiber.Map{
+		"id" : "hi",
+	  })
+}
+
 func calculateReleaseTime(delaySt string) float64{
 	unit := string(delaySt[len(delaySt)-1])
 	delay := delaySt[:len(delaySt)-1]
@@ -63,5 +74,6 @@ func calculateReleaseTime(delaySt string) float64{
 
 func (h Handler) Register(app *fiber.App) {
 	app.Post("/events", h.registerEvents)
+	app.Get("/events/:eventId", h.getEvents)
 	
 }

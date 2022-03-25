@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
@@ -54,4 +55,13 @@ func (s *MongoDB) StoreAction(ctx context.Context, id primitive.ObjectID, t []st
 	fmt.Println("Inserted a single document in actions: ", insertResult.InsertedID)
 
 	return id.String(), nil
+}
+
+func (s *MongoDB) GetAction(ctx context.Context, id primitive.ObjectID) (model.Action, error){
+	res := s.DB.Collection(ActionCollection).FindOne(ctx , bson.M{
+		"_id" : id,
+	})
+	action := model.Action{}
+	res.Decode(&action)
+	return action,nil
 }
