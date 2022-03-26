@@ -11,6 +11,7 @@ type Action struct{
 
 type Event struct{
 	ID string `bson:"_id"`
+	ActionId string `bson:"action_id"`
 	Description string `bson:"description"`
 	Delay string `bson:"delay"`
 	Topic string `bson:"topic"`

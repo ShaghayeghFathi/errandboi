@@ -2,6 +2,7 @@ package mongo
 
 import (
 	"context"
+	"errandboi/internal/http/response"
 	"errandboi/internal/model"
 	"fmt"
 	"log"
@@ -21,10 +22,11 @@ func NewMongoDB(database *mongo.Database) *MongoDB{
 	return &MongoDB{DB: database}
 }
 
-func (s *MongoDB) StoreEvent(ctx context.Context, id string, descp string, d string,topic string, payload interface{} ) (string, error) {
+func (s *MongoDB) StoreEvent(ctx context.Context, id string, actionId string, descp string, d string,topic string, payload interface{} ) (string, error) {
 	events := s.DB.Collection(EventsCollection)
 	event := model.Event{
 		ID: id,
+		ActionId: actionId,
 		Description: descp,
 		Delay: d,
 		Topic: topic,
@@ -64,4 +66,45 @@ func (s *MongoDB) GetAction(ctx context.Context, id primitive.ObjectID) (model.A
 	action := model.Action{}
 	res.Decode(&action)
 	return action,nil
+}
+
+func (s *MongoDB) GetEvents(ctx context.Context, actionId string) ([]response.EventResponse, error){
+	var events []response.EventResponse
+	cursor, err := s.DB.Collection(EventsCollection).Find(ctx ,bson.M{
+		"action_id" : actionId,
+	})
+	if(err!=nil){
+		log.Fatal(err)
+	}
+	defer cursor.Close(ctx)
+	for cursor.Next(ctx) {
+		var res model.Event
+		if err = cursor.Decode(&res); err != nil {
+			log.Fatal(err)
+		}
+		result:= response.EventResponse{Description:res.Description, Delay: res.Delay, Topic: res.Topic, Payload: res.Payload}
+		events = append(events, result)
+		fmt.Println(result)
+	}
+	return events,nil
+}
+
+func (s *MongoDB) GetEventStatus(ctx context.Context, actionId string) ([]response.EventStatusResponse, error){
+	var events []response.EventStatusResponse
+	cursor, err := s.DB.Collection(EventsCollection).Find(ctx ,bson.M{
+		"action_id" : actionId,
+	})
+	if(err!=nil){
+		log.Fatal(err)
+	}
+	defer cursor.Close(ctx)
+	for cursor.Next(ctx) {
+		var res model.Event
+		if err = cursor.Decode(&res); err != nil {
+			log.Fatal(err)
+		}
+		result:= response.EventStatusResponse{Description:res.Description, PublishDate: res.Delay, Status: res.Status}
+		events = append(events, result)
+	}
+	return events,nil
 }
