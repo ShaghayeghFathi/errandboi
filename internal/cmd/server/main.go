@@ -47,8 +47,7 @@ func main(cfg config.Config){
 		Mongo: mongo,
 	}.Register(app)
 	emqClient := emq.NewConnection(cfg.Emq)
-	fmt.Println("emq client: ", emqClient)
-	publisher := publisher.NewPublisher(redis, mongo, 10)
+	publisher := publisher.NewPublisher(redis, &emq.Mqtt{Client: emqClient}, mongo,10)
 	scheduler,_ := scheduler.NewScheduler(publisher) 
 	scheduler.WorkInIntervals(time.Second)
 	if err := app.Listen(":3000"); !errors.Is(err, http.ErrServerClosed) {

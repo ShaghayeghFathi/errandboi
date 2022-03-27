@@ -8,7 +8,7 @@ import (
 )
 
 type Mqtt struct{
-	Client *mqtt.Client
+	Client mqtt.Client
 }
 
 var messagePubHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Message) {

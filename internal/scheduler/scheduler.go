@@ -27,7 +27,7 @@ func(sch *scheduler) WorkInIntervals(d time.Duration){
 			select {
 			case <-ticker.C:
 				sch.Publisher.GetEvents()
-				// do shit
+				sch.Publisher.Work()
 			case <-sch.Stop:
 				ticker.Stop()
 				return
