@@ -18,7 +18,7 @@ func (r *RedisDB) ZSet(ctx context.Context, setName string, publishTime float64,
 	return r.db.Client.ZAddNX(ctx, setName, &redis.Z{ Score:  publishTime, Member: id}).Result()
 }
 
-func (r *RedisDB) ZGetRange(ctx context.Context, setName string, start int, end int) ([]redis.Z, error) {
+func (r *RedisDB) ZGetRange(ctx context.Context, setName string, start float64, end float64) ([]redis.Z, error) {
 	return r.db.Client.ZRangeArgsWithScores(ctx, redis.ZRangeArgs{Key: setName,Start: start,Stop:end,ByScore: true,Rev:true}).Result()
 }
 

@@ -108,3 +108,13 @@ func (s *MongoDB) GetEventStatus(ctx context.Context, actionId string) ([]respon
 	}
 	return events,nil
 }
+
+func (s *MongoDB) GetEvent(ctx context.Context, eventId string, actionId string) (model.Event , error){
+	res := s.DB.Collection(EventsCollection).FindOne(ctx ,bson.M{
+		"_id" : eventId,
+		"action_id" : actionId,
+	})
+	event := model.Event{}
+	res.Decode(&event)
+	return event,nil
+}

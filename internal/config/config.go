@@ -3,6 +3,7 @@ package config
 import (
 	"errandboi/internal/db/mongodb"
 	"errandboi/internal/db/rdb"
+	"errandboi/internal/services/emq"
 	"log"
 
 	"github.com/knadh/koanf"
@@ -12,6 +13,7 @@ import (
 type Config struct{
 	Redis rdb.Config `koanf:"redis"`
 	Mongo mongodb.Config `koanf:"mongo"`
+	Emq emq.Config `koanf:"emq"`
 }
 
 func New() Config {
