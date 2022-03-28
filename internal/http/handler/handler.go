@@ -1,8 +1,11 @@
 package handler
 
 import (
+	"context"
+	"errandboi/internal/model"
 	"errandboi/internal/store/mongo"
 	redisPK "errandboi/internal/store/redis"
+	"log"
 	"net/http"
 	"strconv"
 	"time"
@@ -14,71 +17,98 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-type Handler struct{
+type Handler struct {
 	Redis *redisPK.RedisDB
 	Mongo *mongo.MongoDB
 }
 
-func(h Handler) registerEvents(ctx *fiber.Ctx)error{
+func (h Handler) registerEvents(ctx *fiber.Ctx) error {
 	action := new(request.Action)
 
 	if err := ctx.BodyParser(action); err != nil {
 		return fiber.NewError(http.StatusBadRequest, err.Error())
 	}
 	actionId := primitive.NewObjectID()
-	actionIdValue:= actionId.Hex()
-	temp  := action.Type[0]
-	if len(action.Type) == 2{
+	actionIdValue := actionId.Hex()
+	temp := action.Type[0]
+	if len(action.Type) == 2 {
 		temp = action.Type[0] + "_" + action.Type[1]
 	}
 	for i := 0; i < len(action.Events); i++ {
 		releaseTime := calculateReleaseTime(action.Events[i].Delay)
 		id := actionIdValue + "_" + strconv.Itoa(i)
-		h.Redis.ZSet(ctx.Context() , "events" , releaseTime, id ) // TODO: add set name to config
-		h.Redis.Set(ctx.Context(), "desc" + "_" + id , action.Events[i].Description)
-		h.Redis.Set(ctx.Context(), "topic" + "_" + id, action.Events[i].Topic)
-		h.Redis.Set(ctx.Context(), "payload" + "_" + id, action.Events[i].Payload.(string))
-		h.Redis.Set(ctx.Context(), "type" + "_" + id, temp)
-		h.Mongo.StoreEvent(ctx.Context(), id , actionIdValue, action.Events[i].Description, action.Events[i].Delay , 
-		action.Events[i].Topic, action.Events[i].Payload)
+		h.cacheEvent(ctx.Context(), id, releaseTime, action.Events[i], temp)
+		eventModel := &model.Event{ID: id, ActionId: actionIdValue,
+			Description: action.Events[i].Description,
+			Delay:       action.Events[i].Delay,
+			Topic:       action.Events[i].Topic,
+			Payload:     action.Events[i].Payload,
+			Status:      "pending"}
+		_, err := h.Mongo.StoreEvent(ctx.Context(), eventModel)
+		if err != nil {
+			log.Fatal("could not store event")
+		}
 	}
-	h.Mongo.StoreAction(ctx.Context(), actionId, action.Type,len(action.Events))
-	
+	_, err := h.Mongo.StoreAction(ctx.Context(), actionId, action.Type, len(action.Events))
+	if err != nil {
+		log.Fatal("could not store action")
+	}
 	return ctx.Status(http.StatusOK).JSON(&fiber.Map{
-		"id" : actionIdValue,
-	  })
+		"id": actionIdValue,
+	})
 }
 
-func(h *Handler) getEvents(ctx *fiber.Ctx)error{
+func (h *Handler) getEvents(ctx *fiber.Ctx) error {
 	eventId := ctx.Params("eventId")
-	objectId,_ := primitive.ObjectIDFromHex(eventId)
-	action,_ := h.Mongo.GetAction(ctx.Context(), objectId)
-	events,_ := h.Mongo.GetEvents(ctx.Context(), eventId)	
-	return ctx.Status(http.StatusOK).JSON(response.GetEventsResponse{Type: action.Type, Events:events})
+	objectId, _ := primitive.ObjectIDFromHex(eventId)
+	action, _ := h.Mongo.GetAction(ctx.Context(), objectId)
+	events, _ := h.Mongo.GetEvents(ctx.Context(), eventId)
+	return ctx.Status(http.StatusOK).JSON(response.GetEventsResponse{Type: action.Type, Events: events})
 }
 
-func(h *Handler) getEventStatus(ctx *fiber.Ctx)error{
+func (h *Handler) getEventStatus(ctx *fiber.Ctx) error {
 	eventId := ctx.Params("eventId")
-	objectId,_ := primitive.ObjectIDFromHex(eventId)
-	action,_ := h.Mongo.GetAction(ctx.Context(), objectId)
-	events,_ := h.Mongo.GetEventStatus(ctx.Context(), eventId)	
-	return ctx.Status(http.StatusOK).JSON(response.GetEventsStatusResponse{Status: action.Status, Events:events})
+	objectId, _ := primitive.ObjectIDFromHex(eventId)
+	action, _ := h.Mongo.GetAction(ctx.Context(), objectId)
+	events, _ := h.Mongo.GetEventStatus(ctx.Context(), eventId)
+	return ctx.Status(http.StatusOK).JSON(response.GetEventsStatusResponse{Status: action.Status, Events: events})
 }
 
-func calculateReleaseTime(delaySt string) float64{
+func (h *Handler) cacheEvent(ctx context.Context, id string, releaseTime float64, event request.Event, temp string) {
+	_, err := h.Redis.ZSet(ctx, "events", releaseTime, id) // TODO: add set name to config
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = h.Redis.Set(ctx, "desc"+"_"+id, event.Description)
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = h.Redis.Set(ctx, "topic"+"_"+id, event.Topic)
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = h.Redis.Set(ctx, "payload"+"_"+id, event.Payload.(string))
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = h.Redis.Set(ctx, "type"+"_"+id, temp)
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+func calculateReleaseTime(delaySt string) float64 {
 	unit := string(delaySt[len(delaySt)-1])
 	delay := delaySt[:len(delaySt)-1]
-	delayInt,_ := strconv.ParseFloat(delay, 64)
-	releaseTime :=0.0
+	delayInt, _ := strconv.ParseFloat(delay, 64)
+	releaseTime := 0.0
 	switch unit {
-	case "s":{
-		releaseTime =float64(time.Now().Unix())+delayInt
-	}
-	case "m":{
-		releaseTime = float64(time.Now().Unix())+ delayInt*60
-	}
+	case "s":
+		releaseTime = float64(time.Now().Unix()) + delayInt
+	case "m":
+		releaseTime = float64(time.Now().Unix()) + delayInt*60
 	case "h":
-		releaseTime = float64(time.Now().Unix())+ delayInt*60*60
+		releaseTime = float64(time.Now().Unix()) + delayInt*60*60
 	}
 	return releaseTime
 }
@@ -86,5 +116,5 @@ func calculateReleaseTime(delaySt string) float64{
 func (h Handler) Register(app *fiber.App) {
 	app.Post("/events", h.registerEvents)
 	app.Get("/events/:eventId", h.getEvents)
-	app.Get("/events/:eventId/status", h.getEventStatus)	
+	app.Get("/events/:eventId/status", h.getEventStatus)
 }

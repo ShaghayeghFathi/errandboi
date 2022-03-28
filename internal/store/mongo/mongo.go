@@ -14,41 +14,33 @@ import (
 
 var ActionCollection = "actions"
 var EventsCollection = "events"
+
 type MongoDB struct {
-	DB      *mongo.Database
+	DB *mongo.Database
 }
 
-func NewMongoDB(database *mongo.Database) *MongoDB{
+func NewMongoDB(database *mongo.Database) *MongoDB {
 	return &MongoDB{DB: database}
 }
 
-func (s *MongoDB) StoreEvent(ctx context.Context, id string, actionId string, descp string, d string,topic string, payload interface{} ) (string, error) {
+func (s *MongoDB) StoreEvent(ctx context.Context, event *model.Event) (string, error) {
 	events := s.DB.Collection(EventsCollection)
-	event := model.Event{
-		ID: id,
-		ActionId: actionId,
-		Description: descp,
-		Delay: d,
-		Topic: topic,
-		Payload: payload,
-		Status: "pending",
-	}
 	insertResult, err := events.InsertOne(ctx, event)
 	if err != nil {
 		log.Fatal(err)
 	}
 	fmt.Println("Inserted a single document: ", insertResult.InsertedID)
 
-	return id, nil
+	return event.ID, nil
 }
 
 func (s *MongoDB) StoreAction(ctx context.Context, id primitive.ObjectID, t []string, eventCount int) (string, error) {
 	actions := s.DB.Collection(ActionCollection)
 	action := model.Action{
-		ID: id,
-		Type: t,
+		ID:         id,
+		Type:       t,
 		EventCount: eventCount,
-		Status: "pending",
+		Status:     "pending",
 	}
 	insertResult, err := actions.InsertOne(ctx, action)
 	if err != nil {
@@ -59,21 +51,23 @@ func (s *MongoDB) StoreAction(ctx context.Context, id primitive.ObjectID, t []st
 	return id.String(), nil
 }
 
-func (s *MongoDB) GetAction(ctx context.Context, id primitive.ObjectID) (model.Action, error){
-	res := s.DB.Collection(ActionCollection).FindOne(ctx , bson.M{
-		"_id" : id,
+func (s *MongoDB) GetAction(ctx context.Context, id primitive.ObjectID) (model.Action, error) {
+	res := s.DB.Collection(ActionCollection).FindOne(ctx, bson.M{
+		"_id": id,
 	})
 	action := model.Action{}
-	res.Decode(&action)
-	return action,nil
+	if err := res.Decode(&action); err != nil {
+		fmt.Println(err)
+	}
+	return action, nil
 }
 
-func (s *MongoDB) GetEvents(ctx context.Context, actionId string) ([]response.EventResponse, error){
+func (s *MongoDB) GetEvents(ctx context.Context, actionId string) ([]response.EventResponse, error) {
 	var events []response.EventResponse
-	cursor, err := s.DB.Collection(EventsCollection).Find(ctx ,bson.M{
-		"action_id" : actionId,
+	cursor, err := s.DB.Collection(EventsCollection).Find(ctx, bson.M{
+		"action_id": actionId,
 	})
-	if(err!=nil){
+	if err != nil {
 		log.Fatal(err)
 	}
 	defer cursor.Close(ctx)
@@ -82,19 +76,19 @@ func (s *MongoDB) GetEvents(ctx context.Context, actionId string) ([]response.Ev
 		if err = cursor.Decode(&res); err != nil {
 			log.Fatal(err)
 		}
-		result:= response.EventResponse{Description:res.Description, Delay: res.Delay, Topic: res.Topic, Payload: res.Payload}
+		result := response.EventResponse{Description: res.Description, Delay: res.Delay, Topic: res.Topic, Payload: res.Payload}
 		events = append(events, result)
 		fmt.Println(result)
 	}
-	return events,nil
+	return events, nil
 }
 
-func (s *MongoDB) GetEventStatus(ctx context.Context, actionId string) ([]response.EventStatusResponse, error){
+func (s *MongoDB) GetEventStatus(ctx context.Context, actionId string) ([]response.EventStatusResponse, error) {
 	var events []response.EventStatusResponse
-	cursor, err := s.DB.Collection(EventsCollection).Find(ctx ,bson.M{
-		"action_id" : actionId,
+	cursor, err := s.DB.Collection(EventsCollection).Find(ctx, bson.M{
+		"action_id": actionId,
 	})
-	if(err!=nil){
+	if err != nil {
 		log.Fatal(err)
 	}
 	defer cursor.Close(ctx)
@@ -103,18 +97,20 @@ func (s *MongoDB) GetEventStatus(ctx context.Context, actionId string) ([]respon
 		if err = cursor.Decode(&res); err != nil {
 			log.Fatal(err)
 		}
-		result:= response.EventStatusResponse{Description:res.Description, PublishDate: res.Delay, Status: res.Status}
+		result := response.EventStatusResponse{Description: res.Description, PublishDate: res.Delay, Status: res.Status}
 		events = append(events, result)
 	}
-	return events,nil
+	return events, nil
 }
 
-func (s *MongoDB) GetEvent(ctx context.Context, eventId string, actionId string) (model.Event , error){
-	res := s.DB.Collection(EventsCollection).FindOne(ctx ,bson.M{
-		"_id" : eventId,
-		"action_id" : actionId,
+func (s *MongoDB) GetEvent(ctx context.Context, eventId string, actionId string) (model.Event, error) {
+	res := s.DB.Collection(EventsCollection).FindOne(ctx, bson.M{
+		"_id":       eventId,
+		"action_id": actionId,
 	})
 	event := model.Event{}
-	res.Decode(&event)
-	return event,nil
+	if err := res.Decode(&event); err != nil {
+		fmt.Println(err)
+	}
+	return event, nil
 }

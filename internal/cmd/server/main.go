@@ -9,6 +9,7 @@ import (
 	"errandboi/internal/publisher"
 	"errandboi/internal/scheduler"
 	"errandboi/internal/services/emq"
+	"errandboi/internal/services/nats"
 	"errandboi/internal/store/mongo"
 	redisPK "errandboi/internal/store/redis"
 	"errors"
@@ -21,8 +22,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func main(cfg config.Config){
-	
+func main(cfg config.Config) {
+
 	println("ran serve command")
 	ctx := context.Background()
 
@@ -43,12 +44,16 @@ func main(cfg config.Config){
 	redis := redisPK.NewRedis(&redisdb)
 	mongo := mongo.NewMongoDB(mongodb)
 	handler.Handler{
-		Redis : redis,
+		Redis: redis,
 		Mongo: mongo,
 	}.Register(app)
 	emqClient := emq.NewConnection(cfg.Emq)
-	publisher := publisher.NewPublisher(redis, &emq.Mqtt{Client: emqClient}, mongo,10)
-	scheduler,_ := scheduler.NewScheduler(publisher) 
+	natsClient, err := nats.NewConnection(cfg.Nats)
+	if err != nil {
+		fmt.Println(err)
+	}
+	publisher := publisher.NewPublisher(redis, &emq.Mqtt{Client: emqClient}, natsClient, mongo, 10)
+	scheduler, _ := scheduler.NewScheduler(publisher)
 	scheduler.WorkInIntervals(time.Second)
 	if err := app.Listen(":3000"); !errors.Is(err, http.ErrServerClosed) {
 		log.Fatal("fiber initiation failed")
