@@ -3,7 +3,6 @@ package handler
 import (
 	"errandboi/internal/store/mongo"
 	redisPK "errandboi/internal/store/redis"
-	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -28,12 +27,18 @@ func(h Handler) registerEvents(ctx *fiber.Ctx)error{
 	}
 	actionId := primitive.NewObjectID()
 	actionIdValue:= actionId.Hex()
-	fmt.Println("actionIdValue: ", actionIdValue)
+	temp  := action.Type[0]
+	if len(action.Type) == 2{
+		temp = action.Type[0] + "_" + action.Type[1]
+	}
 	for i := 0; i < len(action.Events); i++ {
 		releaseTime := calculateReleaseTime(action.Events[i].Delay)
 		id := actionIdValue + "_" + strconv.Itoa(i)
 		h.Redis.ZSet(ctx.Context() , "events" , releaseTime, id ) // TODO: add set name to config
-
+		h.Redis.Set(ctx.Context(), "desc" + "_" + id , action.Events[i].Description)
+		h.Redis.Set(ctx.Context(), "topic" + "_" + id, action.Events[i].Topic)
+		h.Redis.Set(ctx.Context(), "payload" + "_" + id, action.Events[i].Payload.(string))
+		h.Redis.Set(ctx.Context(), "type" + "_" + id, temp)
 		h.Mongo.StoreEvent(ctx.Context(), id , actionIdValue, action.Events[i].Description, action.Events[i].Delay , 
 		action.Events[i].Topic, action.Events[i].Payload)
 	}

@@ -25,3 +25,15 @@ func (r *RedisDB) ZGetRange(ctx context.Context, setName string, start float64, 
 func (r *RedisDB) ZDel(ctx context.Context, setName string)([]redis.Z , error){
 	return r.db.Client.ZPopMin(ctx, setName).Result()
 }
+
+func (r *RedisDB) Set(ctx context.Context, key string, value string) error {
+	return r.db.Client.Set(ctx, key, value, 0).Err()
+}
+
+func (r *RedisDB) Get(ctx context.Context, key string) (string, error) {
+	return r.db.Client.Get(ctx, key).Result()
+}
+
+func (r *RedisDB) Del(ctx context.Context, key string) error {
+	return r.db.Client.Del(ctx, key).Err()
+}
