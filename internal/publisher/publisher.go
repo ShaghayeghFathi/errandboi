@@ -3,7 +3,7 @@ package publisher
 import (
 	"context"
 	"errandboi/internal/services/emq"
-	"errandboi/internal/services/nats"
+	natsPK "errandboi/internal/services/nats"
 	"errandboi/internal/store/mongo"
 	redisPK "errandboi/internal/store/redis"
 	"errors"
@@ -21,7 +21,7 @@ type Publisher struct {
 	Mongo      *mongo.MongoDB
 	Events     []Event
 	Mqtt       *emq.Mqtt
-	Nats       *nats.Nats
+	Nats       *natsPK.Nats
 	Wp         *workerpool.WorkerPool
 	WorkerSize int
 }
@@ -35,7 +35,7 @@ type Event struct {
 
 var EventRedisFields []string = []string{"topic", "payload", "type"}
 
-func NewPublisher(r *redisPK.RedisDB, client *emq.Mqtt, natsCl *nats.Nats, m *mongo.MongoDB, size int) *Publisher {
+func NewPublisher(r *redisPK.RedisDB, client *emq.Mqtt, natsCl *natsPK.Nats, m *mongo.MongoDB, size int) *Publisher {
 	return &Publisher{Redis: r, Mongo: m, Mqtt: client, Nats: natsCl, Wp: workerpool.New(size), WorkerSize: size}
 }
 
@@ -50,7 +50,8 @@ func (pb *Publisher) GetEvents() {
 		eventId := events[i].Member.(string)
 		var field []string
 		for j := 0; j < 3; j++ {
-			field[i], err = pb.Redis.Get(ctx, EventRedisFields[i]+"_"+eventId)
+			tmp, err := pb.Redis.Get(ctx, EventRedisFields[j]+"_"+eventId)
+			field = append(field, tmp)
 			if err != nil {
 				log.Fatal("Could not retrieve event info from redis")
 			}
@@ -76,8 +77,6 @@ func (pb *Publisher) RemoveEvent(event Event) error {
 
 	pb.deleteEventRedis(event)
 
-	// pb.Mongo.updateEventStatus(event.ID)
-
 	return nil
 }
 
@@ -97,19 +96,22 @@ func (pb *Publisher) Work() {
 		wg.Add(1)
 		pb.Wp.Submit(func() {
 			defer wg.Done()
-			for i := 0; i < len(event.Type); i++ {
-				pb.publishEvent(event.Type[i], event)
-			}
+			pb.publishEvent(event)
 		})
+
+		pb.deleteEventRedis(event)
+		pb.Mongo.UpdateEventStatus(context.Background(), event.ID)
 	}
 	wg.Wait()
 }
 
-func (pb *Publisher) publishEvent(t string, event Event) {
-	if t == "emqx" {
-		pb.publishEventEMQ(event)
-	} else {
-		pb.publishEventNats(event)
+func (pb *Publisher) publishEvent(event Event) {
+	for i := 0; i < len(event.Type); i++ {
+		if event.Type[i] == "emqx" {
+			go pb.publishEventEMQ(event)
+		} else if event.Type[i] == "nats" {
+			go pb.publishEventNats(event)
+		}
 	}
 }
 
@@ -122,7 +124,12 @@ func (pb *Publisher) publishEventEMQ(event Event) {
 }
 
 func (pb *Publisher) publishEventNats(event Event) {
+	// sub := "events" + "." + event.Topic
+	// msg := &nats.Msg{Subject: "events.*", Data: []byte(event.Payload), Header: make(nats.Header)}
 
+	if _, err := pb.Nats.JSCtx.Publish("events", []byte(event.Payload)); err != nil {
+		fmt.Println(err)
+	}
 }
 
 func (pb *Publisher) deleteEventRedis(e Event) {

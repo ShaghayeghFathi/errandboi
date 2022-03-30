@@ -114,3 +114,18 @@ func (s *MongoDB) GetEvent(ctx context.Context, eventId string, actionId string)
 	}
 	return event, nil
 }
+
+func (s *MongoDB) UpdateEventStatus(ctx context.Context, eventId string) *mongo.UpdateResult {
+	res, err := s.DB.Collection(EventsCollection).UpdateOne(
+		ctx,
+		bson.M{"_id": eventId},
+		bson.D{
+			{"$set", bson.D{primitive.E{Key: "status", Value: "Done"}}},
+		},
+	)
+
+	if err != nil {
+		fmt.Println("update failed")
+	}
+	return res
+}
