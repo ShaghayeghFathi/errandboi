@@ -3,6 +3,7 @@ package config
 import (
 	"errandboi/internal/db/mongodb"
 	"errandboi/internal/db/rdb"
+	"errandboi/internal/logger"
 	"errandboi/internal/services/emq"
 	"errandboi/internal/services/nats"
 	"time"
@@ -29,6 +30,15 @@ func Default() Config {
 		},
 		Nats: nats.Config{
 			URL: "nats://0.0.0.0:4222",
+		},
+		Logger: logger.Config{
+			Level: "debug",
+			Syslog: logger.Syslog{
+				Enabled: false,
+				Network: "",
+				Address: "",
+				Tag:     "",
+			},
 		},
 	}
 }

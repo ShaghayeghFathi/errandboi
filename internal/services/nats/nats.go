@@ -2,38 +2,65 @@ package nats
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/nats-io/nats.go"
+	"go.uber.org/zap"
 )
 
 type Nats struct {
 	Connection *nats.Conn
-	JContext   nats.JetStreamContext
+	JSCtx      nats.JetStreamContext
+	Logger     *zap.Logger
 }
 
-func NewConnection(cfg Config) (*Nats, error) {
-	fmt.Printf(cfg.URL)
+func NewConnection(cfg Config, logger *zap.Logger) (*Nats, error) {
 	nc, err := nats.Connect(cfg.URL)
 	if err != nil {
 		return nil, fmt.Errorf("nats connection failed %w", err)
 	}
 
 	nc.SetDisconnectErrHandler(func(c *nats.Conn, err error) {
-		log.Fatal("nats disconnected", err)
+		logger.Fatal("nats disconnected", zap.Error(err))
 	})
 
 	nc.SetReconnectHandler(func(c *nats.Conn) {
-		log.Println("nats reconnected")
+		logger.Warn("nats reconnected")
 	})
 
-	jsc, err := nc.JetStream()
+	jsc, err := nc.JetStream() // could set timeout
 	if err != nil {
 		return nil, fmt.Errorf("could not get jet stream context %w", err)
 	}
+
 	return &Nats{
 		Connection: nc,
-		JContext:   jsc,
+		JSCtx:      jsc,
+		Logger:     logger,
 	}, nil
 
+}
+
+func (n *Nats) CreateStream() error {
+
+	stream, err := n.JSCtx.StreamInfo("events")
+
+	if err != nil {
+		return fmt.Errorf("stream info not found %w", err)
+	}
+
+	if stream == nil {
+		in, err2 := n.JSCtx.AddStream(&nats.StreamConfig{
+			Name:     ChannelName,
+			Subjects: []string{ChannelName},
+			MaxAge:   0,
+			Storage:  nats.FileStorage,
+		})
+		if err2 != nil {
+			return fmt.Errorf("cannot create stream %w", err2)
+		}
+		stream = in
+	}
+	n.Logger.Info("events stream", zap.Any("stream", stream))
+
+	return nil
 }

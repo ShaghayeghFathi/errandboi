@@ -13,60 +13,76 @@ import (
 	"errandboi/internal/store/mongo"
 	redisPK "errandboi/internal/store/redis"
 	"errors"
-	"fmt"
-	"log"
 	"net/http"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/spf13/cobra"
+	"go.uber.org/zap"
 )
 
-func main(cfg config.Config) {
+func main(cfg config.Config, logger *zap.Logger) {
 
-	println("ran serve command")
 	ctx := context.Background()
 
 	redisClient, err := rdb.New(ctx, cfg.Redis)
 	if err != nil {
-		fmt.Println("redis initiation failed")
-
+		logger.Fatal("redis initiation failed", zap.Error(err))
 	}
-	redisdb := rdb.Redis{Client: redisClient}
+
+	redis := redisPK.NewRedis(&rdb.Redis{Client: redisClient})
+
 	mongodb, err := mongodb.New(cfg.Mongo)
 	if err != nil {
-		log.Fatal("mongo initiation failed")
+		logger.Fatal("mongo initiation failed", zap.Error(err))
 	}
+
+	mongo := mongo.NewMongoDB(mongodb)
+
 	app := fiber.New(fiber.Config{
 		AppName: "errandboi",
 	})
 
-	redis := redisPK.NewRedis(&redisdb)
-	mongo := mongo.NewMongoDB(mongodb)
 	handler.Handler{
-		Redis: redis,
-		Mongo: mongo,
+		Redis:  redis,
+		Mongo:  mongo,
+		Logger: logger,
 	}.Register(app)
-	emqClient := emq.NewConnection(cfg.Emq)
-	natsClient, err := nats.NewConnection(cfg.Nats)
+
+	emqClient, err := emq.NewConnection(cfg.Emq)
 	if err != nil {
-		fmt.Println(err)
+		logger.Fatal("emq client initiation failed", zap.Error(err))
 	}
-	publisher := publisher.NewPublisher(redis, &emq.Mqtt{Client: emqClient}, natsClient, mongo, 10)
-	scheduler, _ := scheduler.NewScheduler(publisher)
+
+	natsClient, err := nats.NewConnection(cfg.Nats, logger)
+	if err != nil {
+		logger.Fatal("nats client initiation failed", zap.Error(err))
+	}
+
+	if err := natsClient.CreateStream(); err != nil {
+		logger.Fatal("stream creation failed", zap.Error(err))
+	}
+
+	publisher := publisher.NewPublisher(redis, &emq.Mqtt{Client: emqClient}, natsClient, mongo, 10, logger)
+
+	scheduler, err := scheduler.NewScheduler(publisher, logger)
+	if err != nil {
+		logger.Fatal("scheduler initiation failed", zap.Error(err))
+	}
+
 	scheduler.WorkInIntervals(time.Second)
 	if err := app.Listen(":3000"); !errors.Is(err, http.ErrServerClosed) {
-		log.Fatal("fiber initiation failed")
+		logger.Fatal("fiber initiation failed", zap.Error(err))
 	}
 }
 
-func Register(root *cobra.Command, cfg config.Config) {
+func Register(root *cobra.Command, cfg config.Config, logger *zap.Logger) {
 	root.AddCommand(
 		&cobra.Command{
 			Use:   "serve",
 			Short: "Run server",
 			Run: func(cmd *cobra.Command, args []string) {
-				main(cfg)
+				main(cfg, logger)
 			},
 		},
 	)

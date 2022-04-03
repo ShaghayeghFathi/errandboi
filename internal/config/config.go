@@ -3,6 +3,7 @@ package config
 import (
 	"errandboi/internal/db/mongodb"
 	"errandboi/internal/db/rdb"
+	"errandboi/internal/logger"
 	"errandboi/internal/services/emq"
 	"errandboi/internal/services/nats"
 	"log"
@@ -11,11 +12,12 @@ import (
 	"github.com/knadh/koanf/providers/structs"
 )
 
-type Config struct{
-	Redis rdb.Config `koanf:"redis"`
-	Mongo mongodb.Config `koanf:"mongo"`
-	Emq emq.Config `koanf:"emq"`
-	Nats nats.Config `koanf:"nats"`
+type Config struct {
+	Logger logger.Config  `koanf:"logger"`
+	Redis  rdb.Config     `koanf:"redis"`
+	Mongo  mongodb.Config `koanf:"mongo"`
+	Emq    emq.Config     `koanf:"emq"`
+	Nats   nats.Config    `koanf:"nats"`
 }
 
 func New() Config {
