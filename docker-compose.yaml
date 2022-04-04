@@ -1,0 +1,25 @@
+---
+version: "3.7"
+services:
+  emqx:
+    image: emqx/emqx:latest
+    ports:
+      - 18083:18083
+      - 1883:1883
+      - 8081:8081
+      - 8083:8083
+      - 8883:8883
+      - 8084:8084
+  redis:
+    image: redis:latest
+    ports:
+      - 6379:6379
+  mongodb:
+    image: mongo:latest
+    ports:
+      - 27017:27017
+  nats:
+    image: nats:latest
+    command: --name nats --js -p 4222
+    ports:
+      - 4222:4444

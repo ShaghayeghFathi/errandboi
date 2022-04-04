@@ -1,0 +1,128 @@
+openapi: 3.0.0
+info:
+  title: Errandboi
+  description: A service that publishes given events to emqx and nats at the given time
+  version: 1.0.0
+servers:
+  - url: http://{{baseurl}}
+paths:
+  /events:
+    post:
+      tags:
+        - General
+      summary: Post Events
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              example:
+                type:
+                  - nats
+                  - emqx
+                events:
+                  - description: Event10
+                    delay: 10s
+                    topic: topic1
+                    payload: hello
+      responses:
+        "200":
+          description: OK
+          headers:
+            Date:
+              schema:
+                type: string
+                example: Sun, 03 Apr 2022 07:57:22 GMT
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+            Content-Length:
+              schema:
+                type: integer
+                example: "33"
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                id: 62495362f8358c7b9d83ff4e
+  /events/{eventId}:
+    get:
+      tags:
+        - General
+      summary: Get Events
+      parameters:
+        - name: eventId
+          in: path
+          schema:
+            type: string
+          required: true
+          example: 62495362f8358c7b9d83ff4e
+      responses:
+        "200":
+          description: OK
+          headers:
+            Date:
+              schema:
+                type: string
+                example: Sun, 03 Apr 2022 07:58:37 GMT
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+            Content-Length:
+              schema:
+                type: integer
+                example: "109"
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                type:
+                  - nats
+                  - emqx
+                events:
+                  - description: Event10
+                    delay: 5s
+                    topic: topic1
+                    payload: hello
+  /events/{eventId}/status:
+    get:
+      tags:
+        - General
+      summary: Get Events Status
+      parameters:
+        - name: eventId
+          in: path
+          schema:
+            type: string
+          required: true
+          example: 62495362f8358c7b9d83ff4e
+      responses:
+        "200":
+          description: OK
+          headers:
+            Date:
+              schema:
+                type: string
+                example: Sun, 03 Apr 2022 07:58:24 GMT
+            Content-Type:
+              schema:
+                type: string
+                example: application/json
+            Content-Length:
+              schema:
+                type: integer
+                example: "90"
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                status: done
+                events:
+                  - description: Event10
+                    publish_date: 5s
+                    status: Done

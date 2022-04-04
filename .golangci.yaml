@@ -1,0 +1,25 @@
+---
+run:
+  tests: false
+
+  skip-files:
+    - ".*_test.go$"
+
+linters:
+  enable-all: true
+  disable:
+    - wrapcheck
+    - gochecknoglobals
+    - exhaustivestruct
+    - varnamelen
+    - tagliatelle
+    - ireturn
+    - forbidigo
+    # deprecated linters
+    - maligned
+    - scopelint
+    - golint
+    - interfacer
+linters-settings:
+  cyclop:
+    max-complexity: 15
