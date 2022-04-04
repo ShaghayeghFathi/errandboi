@@ -27,7 +27,7 @@ func NewConnection(cfg Config, logger *zap.Logger) (*Nats, error) {
 		logger.Warn("nats reconnected")
 	})
 
-	jsc, err := nc.JetStream() // could set timeout
+	jsc, err := nc.JetStream()
 	if err != nil {
 		return nil, fmt.Errorf("could not get jet stream context %w", err)
 	}
@@ -37,13 +37,10 @@ func NewConnection(cfg Config, logger *zap.Logger) (*Nats, error) {
 		JSCtx:      jsc,
 		Logger:     logger,
 	}, nil
-
 }
 
 func (n *Nats) CreateStream() error {
-
-	stream, err := n.JSCtx.StreamInfo("events")
-
+	stream, err := n.JSCtx.StreamInfo(ChannelName)
 	if err != nil {
 		return fmt.Errorf("stream info not found %w", err)
 	}
@@ -58,8 +55,10 @@ func (n *Nats) CreateStream() error {
 		if err2 != nil {
 			return fmt.Errorf("cannot create stream %w", err2)
 		}
+
 		stream = in
 	}
+
 	n.Logger.Info("events stream", zap.Any("stream", stream))
 
 	return nil

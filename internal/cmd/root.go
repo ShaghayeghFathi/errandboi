@@ -1,16 +1,16 @@
 package cmd
 
 import (
+	"log"
+
 	"errandboi/internal/cmd/server"
 	"errandboi/internal/config"
 	"errandboi/internal/logger"
-	"log"
 
 	"github.com/spf13/cobra"
 )
 
 func Execute() {
-
 	cfg := config.New()
 
 	logger := logger.New(cfg.Logger)
@@ -25,5 +25,4 @@ func Execute() {
 	if err := rootCmd.Execute(); err != nil {
 		log.Fatal("error executing command")
 	}
-
 }

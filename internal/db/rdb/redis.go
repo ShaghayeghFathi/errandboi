@@ -13,7 +13,9 @@ type Redis struct {
 }
 
 func New(ctx context.Context, cfg Config) (*redis.Client, error) {
-	timeout, cancel := context.WithTimeout(ctx, 10*time.Second)
+	const t = 10
+	timeout, cancel := context.WithTimeout(ctx, t*time.Second)
+
 	defer cancel()
 
 	client := redis.NewClient(&redis.Options{
@@ -23,7 +25,8 @@ func New(ctx context.Context, cfg Config) (*redis.Client, error) {
 	})
 
 	if err := client.Ping(timeout).Err(); err != nil {
-		return nil, fmt.Errorf("error connecting to redis: %v", err)
+		return nil, fmt.Errorf("error connecting to redis: %w", err)
 	}
+
 	return client, nil
 }

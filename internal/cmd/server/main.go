@@ -2,6 +2,8 @@ package server
 
 import (
 	"context"
+	"time"
+
 	"errandboi/internal/config"
 	"errandboi/internal/db/mongodb"
 	"errandboi/internal/db/rdb"
@@ -12,9 +14,6 @@ import (
 	"errandboi/internal/services/nats"
 	"errandboi/internal/store/mongo"
 	redisPK "errandboi/internal/store/redis"
-	"errors"
-	"net/http"
-	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/spf13/cobra"
@@ -22,7 +21,6 @@ import (
 )
 
 func main(cfg config.Config, logger *zap.Logger) {
-
 	ctx := context.Background()
 
 	redisClient, err := rdb.New(ctx, cfg.Redis)
@@ -59,11 +57,12 @@ func main(cfg config.Config, logger *zap.Logger) {
 		logger.Fatal("nats client initiation failed", zap.Error(err))
 	}
 
-	if err := natsClient.CreateStream(); err != nil {
-		logger.Fatal("stream creation failed", zap.Error(err))
-	}
+	// if err := natsClient.CreateStream(); err != nil {
+	// 	logger.Fatal("stream creation failed", zap.Error(err))
+	// }
 
-	publisher := publisher.NewPublisher(redis, &emq.Mqtt{Client: emqClient}, natsClient, mongo, 10, logger)
+	const ws = 10
+	publisher := publisher.NewPublisher(redis, &emq.Mqtt{Client: emqClient}, natsClient, mongo, ws, logger)
 
 	scheduler, err := scheduler.NewScheduler(publisher, logger)
 	if err != nil {
@@ -71,7 +70,10 @@ func main(cfg config.Config, logger *zap.Logger) {
 	}
 
 	scheduler.WorkInIntervals(time.Second)
-	if err := app.Listen(":3000"); !errors.Is(err, http.ErrServerClosed) {
+
+	err = app.Listen(":3000")
+
+	if err != nil {
 		logger.Fatal("fiber initiation failed", zap.Error(err))
 	}
 }

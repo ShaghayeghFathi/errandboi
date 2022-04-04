@@ -1,9 +1,10 @@
 package scheduler
 
 import (
-	"errandboi/internal/publisher"
 	"fmt"
 	"time"
+
+	"errandboi/internal/publisher"
 
 	"github.com/gammazero/workerpool"
 	"go.uber.org/zap"
@@ -19,13 +20,18 @@ func NewScheduler(pb *publisher.Publisher, logger *zap.Logger) (*scheduler, erro
 	sch := &scheduler{Stop: make(chan struct{}), Logger: logger}
 	if pb != nil {
 		sch.Publisher = pb
+
 		return sch, nil
 	}
-	return nil, fmt.Errorf("publisher cannot be nil")
+
+	pubisherNilErr := fmt.Errorf("publisher cannot be nil")
+
+	return nil, pubisherNilErr
 }
 
 func (sch *scheduler) WorkInIntervals(d time.Duration) {
 	ticker := time.NewTicker(d)
+
 	go func() {
 		for {
 			select {
@@ -34,12 +40,14 @@ func (sch *scheduler) WorkInIntervals(d time.Duration) {
 				sch.Publisher.Work()
 			case <-sch.Stop:
 				err := sch.Publisher.Cancel()
-
 				if err != nil {
 					sch.Logger.Error("publisher was not cancelled", zap.Error(err))
 				}
+
 				sch.Publisher.Wp = workerpool.New(sch.Publisher.WorkerSize)
+
 				ticker.Stop()
+
 				return
 			}
 		}

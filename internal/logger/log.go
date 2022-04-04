@@ -57,6 +57,7 @@ func getPriorityFromLevel(level string) syslog.Priority {
 		return syslog.LOG_CRIT
 	case "panic":
 		return syslog.LOG_ALERT
+
 	default:
 		return syslog.LOG_ERR
 	}

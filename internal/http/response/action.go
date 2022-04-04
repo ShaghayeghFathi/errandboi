@@ -1,24 +1,24 @@
 package response
 
-type GetEventsResponse struct{
-	Type []string `json:"type"`
+type GetEventsResponse struct {
+	Type   []string        `json:"type"`
 	Events []EventResponse `json:"events"`
 }
 
-type EventResponse struct{
-	Description string `json:"description"`
-	Delay string `json:"delay"`
-	Topic string `json:"topic"`
-	Payload interface{} `json:"payload"`
+type EventResponse struct {
+	Description string      `json:"description"`
+	Delay       string      `json:"delay"`
+	Topic       string      `json:"topic"`
+	Payload     interface{} `json:"payload"`
 }
 
-type GetEventsStatusResponse struct{
-	Status string `json:"status"`
+type GetEventsStatusResponse struct {
+	Status string                `json:"status"`
 	Events []EventStatusResponse `json:"events"`
 }
 
-type EventStatusResponse struct{
+type EventStatusResponse struct {
 	Description string `json:"description"`
 	PublishDate string `json:"publish_date"`
-	Status string `json:"status"`
+	Status      string `json:"status"`
 }

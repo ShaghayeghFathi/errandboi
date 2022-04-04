@@ -10,7 +10,6 @@ import (
 )
 
 func New(cfg Config) (*mongo.Database, error) {
-
 	clientOptions := options.Client().ApplyURI(cfg.URL)
 
 	client, err := mongo.NewClient(clientOptions)

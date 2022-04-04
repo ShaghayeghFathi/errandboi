@@ -2,14 +2,15 @@ package publisher
 
 import (
 	"context"
-	"errandboi/internal/services/emq"
-	natsPK "errandboi/internal/services/nats"
-	"errandboi/internal/store/mongo"
-	redisPK "errandboi/internal/store/redis"
 	"fmt"
 	"strings"
 	"sync"
 	"time"
+
+	"errandboi/internal/services/emq"
+	natsPK "errandboi/internal/services/nats"
+	"errandboi/internal/store/mongo"
+	redisPK "errandboi/internal/store/redis"
 
 	"github.com/gammazero/workerpool"
 	"go.uber.org/zap"
@@ -17,7 +18,7 @@ import (
 
 type Publisher struct {
 	Redis      *redisPK.RedisDB
-	Mongo      *mongo.MongoDB
+	Mongo      *mongo.DB
 	Events     []Event
 	Mqtt       *emq.Mqtt
 	Nats       *natsPK.Nats
@@ -33,18 +34,24 @@ type Event struct {
 	Type    []string `json:"type"`
 }
 
-var EventRedisFields []string = []string{"topic", "payload", "type"}
-
 const setName = "events"
 
-func NewPublisher(r *redisPK.RedisDB, client *emq.Mqtt, natsCl *natsPK.Nats, m *mongo.MongoDB, size int, logger *zap.Logger) *Publisher {
-	return &Publisher{Redis: r, Mongo: m, Mqtt: client, Nats: natsCl, Wp: workerpool.New(size), WorkerSize: size, logger: logger}
+func NewPublisher(r *redisPK.RedisDB, client *emq.Mqtt, natsCl *natsPK.Nats,
+	m *mongo.DB, size int, logger *zap.Logger,
+) *Publisher {
+	return &Publisher{
+		Redis: r, Mongo: m, Mqtt: client, Nats: natsCl,
+		Wp: workerpool.New(size), WorkerSize: size, logger: logger,
+	}
 }
 
 func (pb *Publisher) GetEvents() {
+	eventRedisFields := []string{"topic", "payload", "type"}
+
 	pb.Events = make([]Event, 0)
 
-	var ctx = context.Background()
+	ctx := context.Background()
+
 	start := float64(time.Now().Unix())
 
 	events, err := pb.Redis.ZGetRange(ctx, setName, start, start+1)
@@ -53,28 +60,33 @@ func (pb *Publisher) GetEvents() {
 	}
 
 	for i := 0; i < len(events); i++ {
-		eventId := events[i].Member.(string)
+		eventID, _ := events[i].Member.(string)
+
 		var field []string
+
 		for j := 0; j < 3; j++ {
-			tmp, err := pb.Redis.Get(ctx, EventRedisFields[j]+"_"+eventId)
+			tmp, err := pb.Redis.Get(ctx, eventRedisFields[j]+"_"+eventID)
 			if err != nil {
 				pb.logger.Warn("could not retrirve event fields", zap.Error(err))
 			}
+
 			field = append(field, tmp)
 		}
 
 		types := strings.Split(field[2], "_")
-		pb.Events = append(pb.Events, Event{ID: eventId, Topic: field[0], Payload: field[1], Type: types})
-		pb.deleteEventRedis(eventId)
+
+		pb.Events = append(pb.Events, Event{ID: eventID, Topic: field[0], Payload: field[1], Type: types})
+		pb.deleteEventRedis(eventID)
 	}
 }
 
 func (pb *Publisher) Cancel() error {
-
 	pb.Wp.Stop()
+
 	if !pb.Wp.Stopped() {
 		return fmt.Errorf("could not stop publisher")
 	}
+
 	return nil
 }
 
@@ -83,29 +95,27 @@ func (pb *Publisher) Work() {
 
 	for idx := range pb.Events {
 		event := pb.Events[idx]
+
 		wg.Add(1)
 		pb.Wp.Submit(func() {
 			defer wg.Done()
 			pb.publishEvent(event)
 		})
-
 		// update only events status
 		pb.Mongo.UpdateEventStatus(context.Background(), event.ID)
 	}
+
 	wg.Wait()
 }
 
 func (pb *Publisher) publishEvent(event Event) {
-
 	for i := 0; i < len(event.Type); i++ {
-
 		if event.Type[i] == "emqx" {
 			go pb.publishEventEMQ(event)
 		} else if event.Type[i] == "nats" {
 			go pb.publishEventNats(event)
 		}
 	}
-
 }
 
 func (pb *Publisher) publishEventEMQ(event Event) {
@@ -119,21 +129,27 @@ func (pb *Publisher) publishEventEMQ(event Event) {
 }
 
 func (pb *Publisher) publishEventNats(event Event) {
-
 	t := natsPK.ChannelName + "." + event.Topic
-
 	if _, err := pb.Nats.JSCtx.Publish(t, []byte(event.Payload)); err != nil {
-		pb.logger.Error("failed to publish event", zap.String("payload", event.Payload), zap.String("topic", event.Topic), zap.Error(err))
+		pb.logger.Error("failed to publish event", zap.String("payload", event.Payload),
+			zap.String("topic", event.Topic), zap.Error(err))
 	}
+
 	pb.logger.Info("message published to nats", zap.String("payload", event.Payload))
 }
 
 func (pb *Publisher) deleteEventRedis(id string) {
+	eventRedisFields := []string{"topic", "payload", "type"}
 
 	ctx := context.Background()
 
+	err, _ := pb.Redis.ZRem(ctx, "events", id)
+	if err == 0 {
+		pb.logger.Warn("failed to delete event from redis")
+	}
+
 	for i := 0; i < 3; i++ {
-		err := pb.Redis.Del(ctx, EventRedisFields[i]+"_"+id)
+		err := pb.Redis.Del(ctx, eventRedisFields[i]+"_"+id)
 		if err != nil {
 			pb.logger.Error("failed to delete event from redis", zap.Error(err))
 		}

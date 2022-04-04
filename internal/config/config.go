@@ -1,12 +1,13 @@
 package config
 
 import (
+	"log"
+
 	"errandboi/internal/db/mongodb"
 	"errandboi/internal/db/rdb"
 	"errandboi/internal/logger"
 	"errandboi/internal/services/emq"
 	"errandboi/internal/services/nats"
-	"log"
 
 	"github.com/knadh/koanf"
 	"github.com/knadh/koanf/providers/structs"
@@ -26,9 +27,10 @@ func New() Config {
 	if err := k.Load(structs.Provider(Default(), "koanf"), nil); err != nil {
 		log.Fatalf("error loading default config: %v", err)
 	}
+
 	var cfg Config
-	err := k.Unmarshal("", &cfg)
-	if err != nil {
+
+	if err := k.Unmarshal("", &cfg); err != nil {
 		log.Fatalf("erro unmarshaling: %v", err)
 	}
 
