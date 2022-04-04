@@ -1,6 +1,6 @@
 # Errandboi
 
-![errandboi image](images/errandb.png)
+![errandboi image](images/errb.png)
 
 ## Description
 
