@@ -1,7 +1,5 @@
 # Errandboi
 
-## Description
-
 Errandboi is a project that publishes given events to Nats and EMQX. It's basically a scheduler that releases the events based on their publish time.
 
 ## How to run your boy
