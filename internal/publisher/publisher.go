@@ -80,14 +80,12 @@ func (pb *Publisher) GetEvents() {
 	}
 }
 
-func (pb *Publisher) Cancel() error {
+func (pb *Publisher) Cancel() {
 	pb.Wp.Stop()
 
 	if !pb.Wp.Stopped() {
-		return fmt.Errorf("could not stop publisher")
+		pb.logger.Warn("publisher not stopped")
 	}
-
-	return nil
 }
 
 func (pb *Publisher) Work() {

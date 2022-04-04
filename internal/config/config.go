@@ -1,13 +1,12 @@
 package config
 
 import (
-	"log"
-
 	"errandboi/internal/db/mongodb"
 	"errandboi/internal/db/rdb"
 	"errandboi/internal/logger"
 	"errandboi/internal/services/emq"
 	"errandboi/internal/services/nats"
+	"log"
 
 	"github.com/knadh/koanf"
 	"github.com/knadh/koanf/providers/structs"

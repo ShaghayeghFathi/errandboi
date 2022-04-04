@@ -45,7 +45,7 @@ func main(cfg config.Config, logger *zap.Logger) {
 		Redis:  redis,
 		Mongo:  mongo,
 		Logger: logger,
-	}.Register(app)
+	}.Register(app.Group("/events"))
 
 	emqClient, err := emq.NewConnection(cfg.Emq)
 	if err != nil {
@@ -57,9 +57,9 @@ func main(cfg config.Config, logger *zap.Logger) {
 		logger.Fatal("nats client initiation failed", zap.Error(err))
 	}
 
-	// if err := natsClient.CreateStream(); err != nil {
-	// 	logger.Fatal("stream creation failed", zap.Error(err))
-	// }
+	if err := natsClient.CreateStream(); err != nil {
+		logger.Fatal("stream creation failed", zap.Error(err))
+	}
 
 	const ws = 10
 	publisher := publisher.NewPublisher(redis, &emq.Mqtt{Client: emqClient}, natsClient, mongo, ws, logger)
@@ -76,6 +76,7 @@ func main(cfg config.Config, logger *zap.Logger) {
 	if err != nil {
 		logger.Fatal("fiber initiation failed", zap.Error(err))
 	}
+	defer natsClient.Connection.Close()
 }
 
 func Register(root *cobra.Command, cfg config.Config, logger *zap.Logger) {

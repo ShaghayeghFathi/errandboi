@@ -40,7 +40,7 @@ func NewConnection(cfg Config) (c mqtt.Client, err error) {
 	client := mqtt.NewClient(opts)
 
 	if token := client.Connect(); token.Wait() && token.Error() != nil {
-		return nil, fmt.Errorf("emq connection failed %v", err)
+		return nil, fmt.Errorf("emq connection failed %w ", token.Error())
 	}
 
 	return client, nil

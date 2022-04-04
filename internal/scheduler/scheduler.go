@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"errandboi/internal/publisher"
-
 	"github.com/gammazero/workerpool"
 	"go.uber.org/zap"
 )
@@ -16,6 +15,8 @@ type scheduler struct {
 	Logger    *zap.Logger
 }
 
+var errPublisherNil = fmt.Errorf("publisher cannot be nil")
+
 func NewScheduler(pb *publisher.Publisher, logger *zap.Logger) (*scheduler, error) {
 	sch := &scheduler{Stop: make(chan struct{}), Logger: logger}
 	if pb != nil {
@@ -24,9 +25,7 @@ func NewScheduler(pb *publisher.Publisher, logger *zap.Logger) (*scheduler, erro
 		return sch, nil
 	}
 
-	pubisherNilErr := fmt.Errorf("publisher cannot be nil")
-
-	return nil, pubisherNilErr
+	return nil, errPublisherNil
 }
 
 func (sch *scheduler) WorkInIntervals(d time.Duration) {
@@ -39,11 +38,7 @@ func (sch *scheduler) WorkInIntervals(d time.Duration) {
 				sch.Publisher.GetEvents()
 				sch.Publisher.Work()
 			case <-sch.Stop:
-				err := sch.Publisher.Cancel()
-				if err != nil {
-					sch.Logger.Error("publisher was not cancelled", zap.Error(err))
-				}
-
+				sch.Publisher.Cancel()
 				sch.Publisher.Wp = workerpool.New(sch.Publisher.WorkerSize)
 
 				ticker.Stop()

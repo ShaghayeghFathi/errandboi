@@ -7,12 +7,11 @@ import (
 	"strconv"
 	"time"
 
+	"errandboi/internal/http/request"
+	"errandboi/internal/http/response"
 	"errandboi/internal/model"
 	"errandboi/internal/store/mongo"
 	redisPK "errandboi/internal/store/redis"
-
-	"errandboi/internal/http/request"
-	"errandboi/internal/http/response"
 
 	"github.com/gofiber/fiber/v2"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -155,8 +154,8 @@ func calculateReleaseTime(delaySt string) float64 {
 	return releaseTime
 }
 
-func (h Handler) Register(app *fiber.App) {
-	app.Post("/events", h.registerEvents)
-	app.Get("/events/:eventId", h.getEvents)
-	app.Get("/events/:eventId/status", h.getEventStatus)
+func (h Handler) Register(g fiber.Router) {
+	g.Post("", h.registerEvents)
+	g.Get("/:eventId", h.getEvents)
+	g.Get("/:eventId/status", h.getEventStatus)
 }

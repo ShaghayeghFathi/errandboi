@@ -40,10 +40,7 @@ func NewConnection(cfg Config, logger *zap.Logger) (*Nats, error) {
 }
 
 func (n *Nats) CreateStream() error {
-	stream, err := n.JSCtx.StreamInfo(ChannelName)
-	if err != nil {
-		return fmt.Errorf("stream info not found %w", err)
-	}
+	stream, _ := n.JSCtx.StreamInfo(ChannelName)
 
 	if stream == nil {
 		in, err2 := n.JSCtx.AddStream(&nats.StreamConfig{
