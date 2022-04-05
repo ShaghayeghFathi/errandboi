@@ -1,9 +1,11 @@
-FROM golang:1.16-alpine
+FROM golang:1.16-alpine AS builder
 
 WORKDIR /app
 
 COPY go.mod ./
 COPY go.sum ./
+
+RUN go env -w GOPROXY="https://repo.snapp.tech/repository/goproxy/"
 
 RUN go mod download
 
@@ -11,6 +13,15 @@ COPY *.go ./
 
 RUN go build -o /errandboi
 
+FROM alpine:3.12
+
+WORKDIR /app
+
+COPY --from=builder /errandboi .
+# COPY errandboi .
+
 EXPOSE 3000
 
-CMD [ "errandboi" ]
+ENTRYPOINT [ "./erranboi" ]
+
+CMD [ "serve" ]

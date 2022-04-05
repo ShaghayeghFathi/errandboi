@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"errandboi/internal/publisher"
+	"github.com/ShaghayeghFathi/errandboi/internal/publisher"
 	"github.com/gammazero/workerpool"
 	"go.uber.org/zap"
 )

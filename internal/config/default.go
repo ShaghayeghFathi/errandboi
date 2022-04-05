@@ -3,11 +3,11 @@ package config
 import (
 	"time"
 
-	"errandboi/internal/db/mongodb"
-	"errandboi/internal/db/rdb"
-	"errandboi/internal/logger"
-	"errandboi/internal/services/emq"
-	"errandboi/internal/services/nats"
+	"github.com/ShaghayeghFathi/errandboi/internal/db/mongodb"
+	"github.com/ShaghayeghFathi/errandboi/internal/db/rdb"
+	"github.com/ShaghayeghFathi/errandboi/internal/logger"
+	"github.com/ShaghayeghFathi/errandboi/internal/services/emq"
+	"github.com/ShaghayeghFathi/errandboi/internal/services/nats"
 )
 
 func Default() Config {

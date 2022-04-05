@@ -1,7 +1,7 @@
 package redispk
 
 import (
-	"errandboi/internal/db/rdb"
+	"github.com/ShaghayeghFathi/errandboi/internal/db/rdb"
 
 	"github.com/go-redis/redis/v8"
 	"golang.org/x/net/context"

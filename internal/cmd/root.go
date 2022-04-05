@@ -3,9 +3,9 @@ package cmd
 import (
 	"log"
 
-	"errandboi/internal/cmd/server"
-	"errandboi/internal/config"
-	"errandboi/internal/logger"
+	"github.com/ShaghayeghFathi/errandboi/internal/cmd/server"
+	"github.com/ShaghayeghFathi/errandboi/internal/config"
+	"github.com/ShaghayeghFathi/errandboi/internal/logger"
 
 	"github.com/spf13/cobra"
 )

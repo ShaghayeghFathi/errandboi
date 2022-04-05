@@ -4,17 +4,16 @@ import (
 	"context"
 	"time"
 
-	"errandboi/internal/config"
-	"errandboi/internal/db/mongodb"
-	"errandboi/internal/db/rdb"
-	"errandboi/internal/http/handler"
-	"errandboi/internal/publisher"
-	"errandboi/internal/scheduler"
-	"errandboi/internal/services/emq"
-	"errandboi/internal/services/nats"
-	"errandboi/internal/store/mongo"
-	redisPK "errandboi/internal/store/redis"
-
+	"github.com/ShaghayeghFathi/errandboi/internal/config"
+	"github.com/ShaghayeghFathi/errandboi/internal/db/mongodb"
+	"github.com/ShaghayeghFathi/errandboi/internal/db/rdb"
+	"github.com/ShaghayeghFathi/errandboi/internal/http/handler"
+	"github.com/ShaghayeghFathi/errandboi/internal/publisher"
+	"github.com/ShaghayeghFathi/errandboi/internal/scheduler"
+	"github.com/ShaghayeghFathi/errandboi/internal/services/emq"
+	"github.com/ShaghayeghFathi/errandboi/internal/services/nats"
+	"github.com/ShaghayeghFathi/errandboi/internal/store/mongo"
+	redisp "github.com/ShaghayeghFathi/errandboi/internal/store/redis"
 	"github.com/gofiber/fiber/v2"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
@@ -28,7 +27,7 @@ func main(cfg config.Config, logger *zap.Logger) {
 		logger.Fatal("redis initiation failed", zap.Error(err))
 	}
 
-	redis := redisPK.NewRedis(&rdb.Redis{Client: redisClient})
+	redis := redisp.NewRedis(&rdb.Redis{Client: redisClient})
 
 	mongodb, err := mongodb.New(cfg.Mongo)
 	if err != nil {

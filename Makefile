@@ -1,10 +1,10 @@
 all: up run
 
 build:
-	go build errandboi
+	go build github.com/ShaghayeghFathi/errandboi
 
 run:
-	go run errandboi serve
+	go run github.com/ShaghayeghFathi/errandboi serve
 
 up:
 	docker-compose up -d

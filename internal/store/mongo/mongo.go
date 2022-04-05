@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"log"
 
-	"errandboi/internal/http/response"
-	"errandboi/internal/model"
+	"github.com/ShaghayeghFathi/errandboi/internal/http/response"
+	"github.com/ShaghayeghFathi/errandboi/internal/model"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"

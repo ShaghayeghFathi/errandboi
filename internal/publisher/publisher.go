@@ -7,21 +7,21 @@ import (
 	"sync"
 	"time"
 
-	"errandboi/internal/services/emq"
-	natsPK "errandboi/internal/services/nats"
-	"errandboi/internal/store/mongo"
-	redisPK "errandboi/internal/store/redis"
+	"github.com/ShaghayeghFathi/errandboi/internal/services/emq"
+	natsp "github.com/ShaghayeghFathi/errandboi/internal/services/nats"
+	"github.com/ShaghayeghFathi/errandboi/internal/store/mongo"
+	redisp "github.com/ShaghayeghFathi/errandboi/internal/store/redis"
 
 	"github.com/gammazero/workerpool"
 	"go.uber.org/zap"
 )
 
 type Publisher struct {
-	Redis      *redisPK.RedisDB
+	Redis      *redisp.RedisDB
 	Mongo      *mongo.DB
 	Events     []Event
 	Mqtt       *emq.Mqtt
-	Nats       *natsPK.Nats
+	Nats       *natsp.Nats
 	Wp         *workerpool.WorkerPool
 	WorkerSize int
 	logger     *zap.Logger
@@ -36,7 +36,7 @@ type Event struct {
 
 const setName = "events"
 
-func NewPublisher(r *redisPK.RedisDB, client *emq.Mqtt, natsCl *natsPK.Nats,
+func NewPublisher(r *redisp.RedisDB, client *emq.Mqtt, natsCl *natsp.Nats,
 	m *mongo.DB, size int, logger *zap.Logger,
 ) *Publisher {
 	return &Publisher{
@@ -127,7 +127,7 @@ func (pb *Publisher) publishEventEMQ(event Event) {
 }
 
 func (pb *Publisher) publishEventNats(event Event) {
-	t := natsPK.ChannelName + "." + event.Topic
+	t := natsp.ChannelName + "." + event.Topic
 	if _, err := pb.Nats.JSCtx.Publish(t, []byte(event.Payload)); err != nil {
 		pb.logger.Error("failed to publish event", zap.String("payload", event.Payload),
 			zap.String("topic", event.Topic), zap.Error(err))
@@ -153,21 +153,3 @@ func (pb *Publisher) deleteEventRedis(id string) {
 		}
 	}
 }
-
-// func (pb *Publisher) RemoveEvent(event Event) error {
-// 	var index = -1
-// 	for i := range pb.Events {
-// 		if pb.Events[i].ID == event.ID {
-// 			index = i
-// 		}
-// 	}
-// 	if index == -1 {
-// 		return fmt.Errorf("event to be deleted was not found in publisher events")
-// 	}
-// 	pb.Events[index], pb.Events[len(pb.Events)-1] = pb.Events[len(pb.Events)-1], pb.Events[index]
-// 	pb.Events = pb.Events[:len(pb.Events)-1]
-
-// 	fmt.Println(pb.Events)
-
-// 	return nil
-// }
