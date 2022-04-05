@@ -17,6 +17,7 @@ type scheduler struct {
 
 var errPublisherNil = fmt.Errorf("publisher cannot be nil")
 
+// nolint:revive
 func NewScheduler(pb *publisher.Publisher, logger *zap.Logger) (*scheduler, error) {
 	sch := &scheduler{Stop: make(chan struct{}), Logger: logger}
 	if pb != nil {

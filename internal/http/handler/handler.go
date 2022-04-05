@@ -71,6 +71,7 @@ func (h Handler) registerEvents(ctx *fiber.Ctx) error {
 		)
 	}
 
+	// nolint:wrapcheck
 	return ctx.Status(http.StatusOK).JSON(&fiber.Map{
 		"id": actionIDValue,
 	})
@@ -82,6 +83,7 @@ func (h *Handler) getEvents(ctx *fiber.Ctx) error {
 	action, _ := h.Mongo.GetAction(ctx.Context(), objectID)
 	events, _ := h.Mongo.GetEvents(ctx.Context(), eventID)
 
+	// nolint:wrapcheck
 	return ctx.Status(http.StatusOK).JSON(response.GetEventsResponse{Type: action.Type, Events: events})
 }
 
@@ -100,6 +102,7 @@ func (h *Handler) getEventStatus(ctx *fiber.Ctx) error {
 		}
 	}
 
+	// nolint:wrapcheck
 	return ctx.Status(http.StatusOK).JSON(response.GetEventsStatusResponse{Status: s, Events: events})
 }
 

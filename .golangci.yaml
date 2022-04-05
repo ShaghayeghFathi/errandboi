@@ -8,7 +8,6 @@ run:
 linters:
   enable-all: true
   disable:
-    - wrapcheck
     - gochecknoglobals
     - exhaustivestruct
     - varnamelen
