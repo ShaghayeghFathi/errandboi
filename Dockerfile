@@ -9,7 +9,7 @@ RUN go env -w GOPROXY="https://repo.snapp.tech/repository/goproxy/"
 
 RUN go mod download
 
-COPY *.go ./
+COPY . .
 
 RUN go build -o /errandboi
 
@@ -18,7 +18,6 @@ FROM alpine:3.12
 WORKDIR /app
 
 COPY --from=builder /errandboi .
-# COPY errandboi .
 
 EXPOSE 3000
 
