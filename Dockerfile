@@ -5,8 +5,6 @@ WORKDIR /app
 COPY go.mod ./
 COPY go.sum ./
 
-RUN go env -w GOPROXY="https://repo.snapp.tech/repository/goproxy/"
-
 RUN go mod download
 
 COPY . .
