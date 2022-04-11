@@ -45,7 +45,7 @@ func (n *Nats) CreateStream() error {
 	if stream == nil {
 		in, err2 := n.JSCtx.AddStream(&nats.StreamConfig{
 			Name:     ChannelName,
-			Subjects: []string{ChannelName},
+			Subjects: []string{SubjectName},
 			MaxAge:   0,
 			Storage:  nats.FileStorage,
 		})

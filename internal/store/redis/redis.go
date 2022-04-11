@@ -46,10 +46,22 @@ func (r *RedisDB) Set(ctx context.Context, key string, value string) error {
 	return r.db.Client.Set(ctx, key, value, 0).Err()
 }
 
+func (r *RedisDB) SetInt(ctx context.Context, key string, value int) error {
+	// nolint:wrapcheck
+	return r.db.Client.Set(ctx, key, value, 0).Err()
+}
+
 func (r *RedisDB) Get(ctx context.Context, key string) (string, error) {
 	// nolint:wrapcheck
 	return r.db.Client.Get(ctx, key).Result()
 }
+
+func (r *RedisDB) Decrement(ctx context.Context, key string) error {
+	// nolint:wrapcheck
+	return r.db.Client.Decr(ctx, key).Err()
+}
+
+// not used
 
 func (r *RedisDB) Del(ctx context.Context, key string) error {
 	// nolint:wrapcheck

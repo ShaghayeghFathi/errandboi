@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/ShaghayeghFathi/errandboi/internal/http/response"
 	"github.com/ShaghayeghFathi/errandboi/internal/model"
@@ -42,7 +43,6 @@ func (s *DB) StoreAction(ctx context.Context, id primitive.ObjectID, t []string,
 		ID:         id,
 		Type:       t,
 		EventCount: eventCount,
-		Status:     "pending",
 	}
 
 	insertResult, err := actions.InsertOne(ctx, action)
@@ -93,7 +93,6 @@ func (s *DB) GetEvents(ctx context.Context, actionID string) ([]response.EventRe
 		}
 
 		events = append(events, result)
-		fmt.Println(result)
 	}
 
 	return events, nil
@@ -115,8 +114,9 @@ func (s *DB) GetEventStatus(ctx context.Context, actionID string) ([]response.Ev
 		if err = cursor.Decode(&res); err != nil {
 			return nil, fmt.Errorf("cursor decode error %w", err)
 		}
+		tm := time.Unix(int64(res.ReleaseTime), 0)
 
-		result := response.EventStatusResponse{Description: res.Description, PublishDate: res.Delay, Status: res.Status}
+		result := response.EventStatusResponse{Description: res.Description, PublishDate: tm, Status: res.Status}
 		events = append(events, result)
 	}
 

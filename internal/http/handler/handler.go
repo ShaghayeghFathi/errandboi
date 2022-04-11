@@ -43,12 +43,13 @@ func (h Handler) registerEvents(ctx *fiber.Ctx) error {
 		releaseTime := calculateReleaseTime(action.Events[i].Delay)
 		id := actionIDValue + "_" + strconv.Itoa(i)
 
-		h.cacheEvent(ctx.Context(), id, releaseTime, action.Events[i], temp)
+		h.cacheEvent(ctx.Context(), id, actionIDValue, releaseTime, action.Events[i], temp, len(action.Events))
 
 		eventModel := &model.Event{
 			ID: id, ActionID: actionIDValue,
 			Description: action.Events[i].Description,
 			Delay:       action.Events[i].Delay,
+			ReleaseTime: releaseTime,
 			Topic:       action.Events[i].Topic,
 			Payload:     action.Events[i].Payload,
 			Status:      "pending",
@@ -106,7 +107,9 @@ func (h *Handler) getEventStatus(ctx *fiber.Ctx) error {
 	return ctx.Status(http.StatusOK).JSON(response.GetEventsStatusResponse{Status: s, Events: events})
 }
 
-func (h *Handler) cacheEvent(ctx context.Context, id string, releaseTime float64, event request.Event, temp string) {
+func (h *Handler) cacheEvent(ctx context.Context, id string, actionID string,
+	releaseTime float64, event request.Event, temp string, c int,
+) {
 	_, err := h.Redis.ZSet(ctx, "events", releaseTime, id)
 	if err != nil {
 		log.Fatal(err)
@@ -130,6 +133,11 @@ func (h *Handler) cacheEvent(ctx context.Context, id string, releaseTime float64
 	}
 
 	err = h.Redis.Set(ctx, "type"+"_"+id, temp)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	err = h.Redis.SetInt(ctx, "count"+"_"+actionID, c)
 	if err != nil {
 		log.Fatal(err)
 	}

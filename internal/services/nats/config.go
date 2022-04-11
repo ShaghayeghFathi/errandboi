@@ -5,5 +5,6 @@ type Config struct {
 }
 
 const (
-	ChannelName = "events"
+	ChannelName = "EVENTS"
+	SubjectName = "EVENTS.*"
 )
